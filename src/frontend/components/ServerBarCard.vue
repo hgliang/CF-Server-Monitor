@@ -100,6 +100,10 @@
         </div>
       </div>
     </div>
+    <div class="server-card-uptime">
+      <span class="server-card-uptime-label">◷ {{ trans.uptime }}</span>
+      <span class="server-card-uptime-value">{{ uptimeText }}</span>
+    </div>
     <div class="server-space"></div>
     <ServerLatencyPanel
       :show-three-net-details="sysConfig.show_three_net_details"
@@ -159,6 +163,7 @@ const {
   priceText,
   expireDateTitle,
   loadAvg,
+  uptimeText,
   isExpired,
   expireText,
   isPingValid,
