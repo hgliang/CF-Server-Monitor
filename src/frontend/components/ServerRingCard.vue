@@ -112,6 +112,10 @@
           <div v-else class="server-card-limit-fill" style="background-image: linear-gradient(to right, #00d4aa, #4da6ff, #ffb870, #f85149);">></div>
         </div>
       </div>
+      <div class="server-card-uptime">
+        <span class="server-card-uptime-label">◷ {{ trans.uptime }}</span>
+        <span class="server-card-uptime-value">{{ uptimeText }}</span>
+      </div>
       <ServerLatencyPanel
         variant="ring"
         :show-three-net-details="sysConfig.show_three_net_details"
@@ -172,6 +176,7 @@ const {
   priceText,
   expireDateTitle,
   loadAvg,
+  uptimeText,
   ramUsageText,
   diskUsageText,
   getUsageColor,
