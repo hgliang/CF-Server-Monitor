@@ -225,7 +225,7 @@ export function useServerCardData(props) {
     if (bootTime === null || bootTime === undefined || bootTime === '') return '--'
 
     let bootTimeMs = null
-    if (typeof bootTime === 'string' && !/^\\d+$/.test(bootTime)) {
+    if (typeof bootTime === 'string' && !/^\d+$/.test(bootTime)) {
       const parsed = new Date(bootTime)
       if (!Number.isNaN(parsed.getTime())) {
         bootTimeMs = parsed.getTime()
