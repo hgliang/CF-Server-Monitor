@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { formatBytes, getFlagRegionCode, isServerOnline } from '../utils/api'
 import { getPublicAssetUrl } from '../utils/config'
 import { currentLang, useTranslation } from '../utils/i18n'
@@ -96,6 +96,23 @@ export const getUsageColor = (percent) => {
 
 export function useServerCardData(props) {
   const trans = useTranslation()
+
+  // 独立的运行时间时钟：每分钟更新一次，不额外请求 API
+  const uptimeNow = ref(Date.now())
+  let uptimeTimer = null
+
+  onMounted(() => {
+    uptimeTimer = setInterval(() => {
+      uptimeNow.value = Date.now()
+    }, 60000)
+  })
+
+  onUnmounted(() => {
+    if (uptimeTimer) {
+      clearInterval(uptimeTimer)
+      uptimeTimer = null
+    }
+  })
 
   const currentTime = computed(() => {
     const ts = Number(props.server.current_timestamp)
@@ -205,43 +222,38 @@ export function useServerCardData(props) {
   })
 
   const formatUptime = (bootTime, nowTs = Date.now()) => {
-    if (!bootTime) return 'N/A'
+    if (bootTime === null || bootTime === undefined || bootTime === '') return '--'
 
     let bootTimeMs = null
-    if (typeof bootTime === 'string' && !/^\d+$/.test(bootTime)) {
+    if (typeof bootTime === 'string' && !/^\\d+$/.test(bootTime)) {
       const parsed = new Date(bootTime)
       if (!Number.isNaN(parsed.getTime())) {
         bootTimeMs = parsed.getTime()
       }
     } else {
-      const timestamp = Number.parseInt(bootTime)
-      if (Number.isFinite(timestamp)) {
+      const timestamp = Number(bootTime)
+      if (Number.isFinite(timestamp) && timestamp > 0) {
         bootTimeMs = timestamp < 1000000000000 ? timestamp * 1000 : timestamp
       }
     }
 
-    if (!bootTimeMs) return 'N/A'
+    if (!bootTimeMs) return '--'
 
     const diffMs = nowTs - bootTimeMs
-    if (diffMs < 0) return 'N/A'
+    if (diffMs < 0) return '--'
 
     const totalSeconds = Math.floor(diffMs / 1000)
     const days = Math.floor(totalSeconds / 86400)
     const hours = Math.floor((totalSeconds % 86400) / 3600)
     const minutes = Math.floor((totalSeconds % 3600) / 60)
-    const seconds = totalSeconds % 60
     const zh = currentLang.value.startsWith('zh')
-    const parts = []
 
-    if (days > 0) parts.push(zh ? `${days}天` : `${days}d`)
-    if (hours > 0) parts.push(zh ? `${hours}小时` : `${hours}h`)
-    if (minutes > 0) parts.push(zh ? `${minutes}分` : `${minutes}m`)
-    if (seconds > 0 || parts.length === 0) parts.push(zh ? `${seconds}秒` : `${seconds}s`)
-
-    return parts.slice(0, 3).join(' ')
+    return zh
+      ? `${days}天 ${hours}小时 ${minutes}分钟`
+      : `${days}d ${hours}h ${minutes}m`
   }
 
-  const uptimeText = computed(() => formatUptime(props.server.boot_time, currentTime.value))
+  const uptimeText = computed(() => formatUptime(props.server.boot_time, uptimeNow.value))
 
   const formatMetricUsage = (used, total) => `${formatBytes((Number(used) || 0) * 1024 * 1024)} / ${formatBytes((Number(total) || 0) * 1024 * 1024)}`
   const ramUsageText = computed(() => formatMetricUsage(props.server.ram_used, props.server.ram_total))
